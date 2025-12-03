@@ -17,5 +17,8 @@ jobs:
       - name: Say Hello
         run: echo "Hello from GitHub Actions! 🎉"
 
+      - name: Say Hello
+        run: echo "srinivas"
+
       - name: Show current directory
         run: pwd && ls -al
