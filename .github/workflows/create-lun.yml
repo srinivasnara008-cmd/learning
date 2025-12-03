@@ -1,0 +1,50 @@
+name: Robot - Create LUN
+
+on:
+  # Runs when you push OR open a PR to main
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Also allow manual run from GitHub UI
+  workflow_dispatch:
+
+jobs:
+  create-lun-test:
+    runs-on: windows-latest   # use Windows runner like your current setup
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install robotframework
+          # If you have more libs, uncomment:
+          # python -m pip install -r requirements.txt
+
+      - name: Run Robot test - Create LUN
+        run: |
+          mkdir results
+          robot -d results ^
+            -v createRaid:0 ^
+            -v lunSize: ^
+            -v hddType: ^
+            -v driveCount:1 ^
+            -v stripeSize:64 ^
+            -v forceCreate:yes ^
+            -v targetIndex:1 ^
+            tests/createLun.txt
+
+      - name: Upload Robot results (XML, log, report)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: create-lun-results
+          path: results/
