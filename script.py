@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--username", required=True)
 parser.add_argument("--targetIndex", default="0")
 parser.add_argument("--debug", default="false")
+print("working fine")
 
 args = parser.parse_args()
 
