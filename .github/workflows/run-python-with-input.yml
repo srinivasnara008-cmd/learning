@@ -11,6 +11,10 @@ on:
         description: "Target index value"
         required: false
         default: "0"
+      targetIndex_2:
+        description: "Target index value 2"
+        required: false
+        default: "0"
       debug:
         description: "Enable debug mode"
         required: false
