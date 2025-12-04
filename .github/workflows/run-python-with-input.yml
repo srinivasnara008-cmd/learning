@@ -1,0 +1,44 @@
+name: Run Python Script With Input
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "User name to pass to script"
+        required: true
+        default: "admin"
+      targetIndex:
+        description: "Target index value"
+        required: false
+        default: "0"
+      debug:
+        description: "Enable debug mode"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  run-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: hashFiles('requirements.txt') != ''
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Python Script with inputs
+        run: |
+          python script.py \
+            --username "${{ github.event.inputs.username }}" \
+            --targetIndex "${{ github.event.inputs.targetIndex }}" \
+            --debug "${{ github.event.inputs.debug }}"
