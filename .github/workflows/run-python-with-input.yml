@@ -45,4 +45,5 @@ jobs:
           python script.py \
             --username "${{ github.event.inputs.username }}" \
             --targetIndex "${{ github.event.inputs.targetIndex }}" \
+            --targetIndex_2 "${{ github.event.inputs.targetIndex_2 }}" \
             --debug "${{ github.event.inputs.debug }}"
