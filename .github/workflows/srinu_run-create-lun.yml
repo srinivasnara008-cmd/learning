@@ -1,48 +1,6 @@
-name: Run Create LUN Robot Test
-
-on:
-  workflow_dispatch:
-    inputs:
-      targetIndex:
-        description: "Target index for the LUN"
-        required: false
-        default: "1"
-      createRaid:
-        description: "RAID configuration (e.g. 1, 5, 6, 10)"
-        required: false
-        default: ""
-      lunSize:
-        description: "LUN size (e.g. 100G)"
-        required: false
-        default: ""
-      hddType:
-        description: "HDD type (e.g. SAS, SATA, SSD)"
-        required: false
-        default: ""
-      driveCount:
-        description: "Drive count for RAID"
-        required: false
-        default: ""
-      stripeSize:
-        description: "Stripe size"
-        required: false
-        default: ""
-      forceCreate:
-        description: "Force create LUN (yes/no)"
-        required: false
-        default: "no"
-      negativeTest:
-        description: "Is this a negative test? (yes/no)"
-        required: false
-        default: "no"
-      testFile:
-        description: "Robot/RoboGalaxy test file to run"
-        required: true
-        default: "tests/createLun.txt"
-
 jobs:
   run-create-lun:
-    runs-on: windows-latest   # Using Windows to match your backslash paths
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -63,10 +21,20 @@ jobs:
             pip install robotframework
           }
 
-      - name: Run Create LUN Robot test with inputs (using pybot)
+      - name: Create SUT config JSON file from secret
         shell: pwsh
         run: |
-          # If pybot exists (older RF), use it. Otherwise fall back to `robot`.
+          # This will create sut_config.json in repo root
+          $content = @'
+${{ secrets.SUT_CONFIG_JSON }}
+'@
+          Set-Content -Path "sut_config.json" -Value $content
+
+      - name: Run Create LUN Robot test with inputs
+        shell: pwsh
+        run: |
+          # Example: pass JSON file path as a Robot variable if your keywords expect it
+          # Adjust --v sut_config_file:sut_config.json if your framework uses a different name
           if (Get-Command pybot -ErrorAction SilentlyContinue) {
             pybot `
               -v targetIndex:${{ github.event.inputs.targetIndex }} `
@@ -77,6 +45,7 @@ jobs:
               -v stripeSize:${{ github.event.inputs.stripeSize }} `
               -v forceCreate:${{ github.event.inputs.forceCreate }} `
               -v negativeTest:${{ github.event.inputs.negativeTest }} `
+              -v sut_config_file:sut_config.json `
               ${{ github.event.inputs.testFile }}
           } else {
             robot `
@@ -88,5 +57,6 @@ jobs:
               -v stripeSize:${{ github.event.inputs.stripeSize }} `
               -v forceCreate:${{ github.event.inputs.forceCreate }} `
               -v negativeTest:${{ github.event.inputs.negativeTest }} `
+              -v sut_config_file:sut_config.json `
               ${{ github.event.inputs.testFile }}
           }
