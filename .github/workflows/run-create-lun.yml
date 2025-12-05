@@ -1,0 +1,62 @@
+jobs:
+  run-create-lun:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Robot Framework (and deps if available)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
+          } else {
+            pip install robotframework
+          }
+
+      - name: Create SUT config JSON file from secret
+        shell: pwsh
+        run: |
+          # This will create sut_config.json in repo root
+          $content = @'
+${{ secrets.SUT_CONFIG_JSON }}
+'@
+          Set-Content -Path "sut_config.json" -Value $content
+
+      - name: Run Create LUN Robot test with inputs
+        shell: pwsh
+        run: |
+          # Example: pass JSON file path as a Robot variable if your keywords expect it
+          # Adjust --v sut_config_file:sut_config.json if your framework uses a different name
+          if (Get-Command pybot -ErrorAction SilentlyContinue) {
+            pybot `
+              -v targetIndex:${{ github.event.inputs.targetIndex }} `
+              -v createRaid:${{ github.event.inputs.createRaid }} `
+              -v lunSize:${{ github.event.inputs.lunSize }} `
+              -v hddType:${{ github.event.inputs.hddType }} `
+              -v driveCount:${{ github.event.inputs.driveCount }} `
+              -v stripeSize:${{ github.event.inputs.stripeSize }} `
+              -v forceCreate:${{ github.event.inputs.forceCreate }} `
+              -v negativeTest:${{ github.event.inputs.negativeTest }} `
+              -v sut_config_file:sut_config.json `
+              ${{ github.event.inputs.testFile }}
+          } else {
+            robot `
+              -v targetIndex:${{ github.event.inputs.targetIndex }} `
+              -v createRaid:${{ github.event.inputs.createRaid }} `
+              -v lunSize:${{ github.event.inputs.lunSize }} `
+              -v hddType:${{ github.event.inputs.hddType }} `
+              -v driveCount:${{ github.event.inputs.driveCount }} `
+              -v stripeSize:${{ github.event.inputs.stripeSize }} `
+              -v forceCreate:${{ github.event.inputs.forceCreate }} `
+              -v negativeTest:${{ github.event.inputs.negativeTest }} `
+              -v sut_config_file:sut_config.json `
+              ${{ github.event.inputs.testFile }}
+          }
