@@ -1,0 +1,110 @@
+name: Run Create LUN Robot Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetIndex:
+        description: "Target index for the LUN"
+        required: false
+        default: "1"
+      createRaid:
+        description: "RAID configuration (e.g. 1, 5, 6, 10)"
+        required: false
+        default: ""
+      lunSize:
+        description: "LUN size (e.g. 100G)"
+        required: false
+        default: ""
+      hddType:
+        description: "HDD type (e.g. SAS, SATA, SSD)"
+        required: false
+        default: ""
+      driveCount:
+        description: "Drive count for RAID"
+        required: false
+        default: ""
+      stripeSize:
+        description: "Stripe size"
+        required: false
+        default: ""
+      forceCreate:
+        description: "Force create LUN (yes/no)"
+        required: false
+        default: "no"
+      negativeTest:
+        description: "Is this a negative test? (yes/no)"
+        required: false
+        default: "no"
+      testFile:
+        description: "Robot/RoboGalaxy test file to run"
+        required: true
+        default: "tests/createLun.txt"
+
+jobs:
+  run-create-lun:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Robot Framework (or project deps)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
+          } else {
+            pip install robotframework
+          }
+
+      - name: Create sut_config.json from secret
+        # Ensure you created a secret named SUT_CONFIG_JSON in repo settings
+        shell: pwsh
+        run: |
+          # Write secret contents to sut_config.json
+          Set-Content -Path sut_config.json -Value "${{ secrets.SUT_CONFIG_JSON }}"
+
+      - name: Run Create LUN Robot test with inputs
+        shell: pwsh
+        run: |
+          $testFile = "${{ github.event.inputs.testFile }}"
+          $targetIndex = "${{ github.event.inputs.targetIndex }}"
+          $createRaid = "${{ github.event.inputs.createRaid }}"
+          $lunSize = "${{ github.event.inputs.lunSize }}"
+          $hddType = "${{ github.event.inputs.hddType }}"
+          $driveCount = "${{ github.event.inputs.driveCount }}"
+          $stripeSize = "${{ github.event.inputs.stripeSize }}"
+          $forceCreate = "${{ github.event.inputs.forceCreate }}"
+          $negativeTest = "${{ github.event.inputs.negativeTest }}"
+
+          if (Get-Command pybot -ErrorAction SilentlyContinue) {
+            pybot `
+              -v targetIndex:$targetIndex `
+              -v createRaid:$createRaid `
+              -v lunSize:$lunSize `
+              -v hddType:$hddType `
+              -v driveCount:$driveCount `
+              -v stripeSize:$stripeSize `
+              -v forceCreate:$forceCreate `
+              -v negativeTest:$negativeTest `
+              -v sut_config_file:sut_config.json `
+              $testFile
+          } else {
+            robot `
+              -v targetIndex:$targetIndex `
+              -v createRaid:$createRaid `
+              -v lunSize:$lunSize `
+              -v hddType:$hddType `
+              -v driveCount:$driveCount `
+              -v stripeSize:$stripeSize `
+              -v forceCreate:$forceCreate `
+              -v negativeTest:$negativeTest `
+              -v sut_config_file:sut_config.json `
+              $testFile
+          }
